@@ -32,6 +32,53 @@ proxy.on("request", (req, res) => {
     return;
   }
 
+  if (path === "/raw") {
+    const dest = req.headers["x-raw-dest"];
+    if (!dest) {
+      res.writeHead(400, { "content-type": "text/plain" });
+      res.end("Missing x-raw-dest header");
+      return;
+    }
+    const u = new URL(dest);
+    const mod = u.protocol === "http:" ? http : https;
+    const chunks = [];
+    req.on("data", c => chunks.push(c));
+    req.on("end", () => {
+      const body = Buffer.concat(chunks);
+      const opts = {
+        method: req.method,
+        hostname: u.hostname,
+        port: parseInt(u.port) || (u.protocol === "http:" ? 80 : 443),
+        path: u.pathname + u.search,
+        headers: {},
+        rejectUnauthorized: false,
+      };
+      const SKIP = new Set(["host", "x-raw-dest", "content-length", "transfer-encoding", "accept-encoding"]);
+      for (const [k, v] of Object.entries(req.headers)) {
+        if (!SKIP.has(k.toLowerCase())) opts.headers[k] = v;
+      }
+      if (body.length) opts.headers["content-length"] = body.length;
+      const proxyReq = mod.request(opts, (proxyRes) => {
+        const respHeaders = {};
+        for (const [k, v] of Object.entries(proxyRes.headers)) {
+          const lk = k.toLowerCase();
+          if (lk !== "transfer-encoding" && lk !== "content-encoding" && lk !== "content-length") {
+            respHeaders[k] = v;
+          }
+        }
+        res.writeHead(proxyRes.statusCode, respHeaders);
+        proxyRes.pipe(res);
+      });
+      proxyReq.on("error", (e) => {
+        res.writeHead(502, { "content-type": "text/plain" });
+        res.end("Raw Proxy Error: " + e.message);
+      });
+      if (body.length) proxyReq.write(body);
+      proxyReq.end();
+    });
+    return;
+  }
+
   const targetUrl = req.url.startsWith("http") ? req.url : "http://" + (req.headers.host || "localhost") + req.url;
   const u = new URL(targetUrl);
   const mod = u.protocol === "http:" ? http : https;
