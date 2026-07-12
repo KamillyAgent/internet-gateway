@@ -15,6 +15,22 @@ railway up
 
 Railway auto-detects the Node.js app and deploys it. Your proxy will be at `https://your-project.up.railway.app`.
 
+## or
+
+**Go in [Railway](https://railway.com/)**
+
+**Sinup With Your Github Account**
+
+**Then add this repo**
+
+```repo
+https://github.com/o-x-api/internet-gateway
+```
+
+**Click Diploy And Go setting Click Genaret Url enter Port 8080**
+
+**Copy The URL and Run Script then Enter Url. Note: Make sure you url wih https://example-gateway-production-c82b.up.railway.app**
+
 ## Usage
 
 Set the Railway URL as your proxy on the VPS:
