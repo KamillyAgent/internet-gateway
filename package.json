@@ -1,0 +1,13 @@
+{
+  "name": "internet-gateway-proxy",
+  "version": "1.0.0",
+  "description": "AES-256-CBC Encrypted Outbound Gateway Proxy",
+  "main": "proxy.js",
+  "scripts": {
+    "start": "node proxy.js"
+  },
+  "dependencies": {},
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
