@@ -72,7 +72,7 @@ module.exports = async (req, res) => {
 
   const encryptedDest = req.headers["x-forwarded-dest"];
 
-  if ((path === "/" || path === "" || path === "/api/proxy") && !encryptedDest) {
+  if ((path === "/" || path === "" || path === "/api/proxy" || path === "/proxy") && !encryptedDest) {
     res.writeHead(200, { "Content-Type": "application/json", ...corsHeaders });
     res.end(JSON.stringify({ status: "ok", message: "Internet Gateway Proxy is active" }));
     return;
