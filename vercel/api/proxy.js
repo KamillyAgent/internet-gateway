@@ -16,6 +16,15 @@ function decrypt(payloadStr, password) {
   } catch { return null; }
 }
 
+function encryptUrl(url, password) {
+  const key = crypto.createHash("sha256").update(password).digest();
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv("aes-256-cbc", key, iv);
+  let encrypted = cipher.update(url, "utf8");
+  encrypted = Buffer.concat([encrypted, cipher.final()]);
+  return iv.toString("hex") + ":" + encrypted.toString("hex");
+}
+
 const IGNORED_REQ_HEADERS = new Set([
   "host", "x-forwarded-dest", "connection", "content-length",
   "x-forwarded-for", "x-real-ip", "accept-encoding"
@@ -40,7 +49,34 @@ module.exports = async (req, res) => {
     res.writeHead(204, corsHeaders); res.end(); return;
   }
 
+  const url = new URL(req.url, "http://localhost");
+  const path = url.pathname;
+
+  if (path === "/encrypt" && req.method === "GET") {
+    const dest = req.headers["x-forwarded-dest"];
+    if (!dest) {
+      res.writeHead(400, { "Content-Type": "application/json", ...corsHeaders });
+      res.end(JSON.stringify({ error: "Missing x-forwarded-dest header" }));
+      return;
+    }
+    if (!GATEWAY_KEY) {
+      res.writeHead(500, { "Content-Type": "application/json", ...corsHeaders });
+      res.end(JSON.stringify({ error: "INTERNET_GATEWAY_KEY not configured" }));
+      return;
+    }
+    const encrypted = encryptUrl(dest.startsWith("http") ? dest : "https://" + dest, GATEWAY_KEY);
+    res.writeHead(200, { "Content-Type": "application/json", ...corsHeaders });
+    res.end(JSON.stringify({ encrypted }));
+    return;
+  }
+
   const encryptedDest = req.headers["x-forwarded-dest"];
+
+  if ((path === "/" || path === "" || path === "/api/proxy") && !encryptedDest) {
+    res.writeHead(200, { "Content-Type": "application/json", ...corsHeaders });
+    res.end(JSON.stringify({ status: "ok", message: "Internet Gateway Proxy is active" }));
+    return;
+  }
 
   if (!encryptedDest) {
     res.writeHead(400, { "Content-Type": "application/json", ...corsHeaders });
