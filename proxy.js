@@ -1,13 +1,36 @@
 const http = require("http");
 const https = require("https");
 const net = require("net");
-const url = require("url");
+const os = require("os");
 
 const PORT = process.env.PORT || 8080;
 
 const proxy = http.createServer();
 
 proxy.on("request", (req, res) => {
+  const path = req.url.split("?")[0];
+
+  if (path === "/" || path === "") {
+    const uptime = Math.floor(process.uptime());
+    const h = `<html><head><title>Internet Gateway - Active</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#0d1117;color:#c9d1d9;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;padding:20px;box-sizing:border-box}.card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:40px;max-width:500px;width:100%;text-align:center}h1{color:#58a6ff;margin:0 0 8px;font-size:24px}.status{color:#3fb950;font-size:14px;margin-bottom:24px}.info{text-align:left;background:#0d1117;border-radius:8px;padding:16px;font-size:13px;line-height:1.8}.info span{color:#8b949e}.badge{display:inline-block;background:#1f6feb22;color:#58a6ff;border:1px solid #1f6feb44;border-radius:20px;padding:4px 12px;font-size:12px;margin-top:20px}</style></head><body>
+<div class="card"><h1>Internet Gateway</h1>
+<div class="status">● Proxy Active</div>
+<div class="info">
+<span>Host:</span> ${os.hostname()}<br>
+<span>Uptime:</span> ${Math.floor(uptime / 60)}m ${uptime % 60}s<br>
+<span>Node:</span> ${process.version}<br>
+<span>Port:</span> ${PORT}<br>
+<span>Platform:</span> railway.app<br>
+</div>
+<div class="badge">Forward Proxy — CONNECT + HTTP</div>
+</div></body></html>`;
+    res.writeHead(200, { "content-type": "text/html; charset=utf-8", "content-length": Buffer.byteLength(h) });
+    res.end(h);
+    return;
+  }
+
   const targetUrl = req.url.startsWith("http") ? req.url : "http://" + (req.headers.host || "localhost") + req.url;
   const u = new URL(targetUrl);
   const mod = u.protocol === "http:" ? http : https;
