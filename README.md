@@ -1,56 +1,33 @@
 # Internet Gateway
 
-Vercel-deployed proxy with `/encrypt` and `/raw` endpoints for routing outbound traffic through a whitelisted domain.
+Railway-deployed forward proxy for routing traffic through a whitelisted domain (`*.railway.app`).
 
 **Setup scripts & VPS modules:** [o-x-api/internet-gateway-setup](https://github.com/o-x-api/internet-gateway-setup)
 
 ---
 
-## Deploy to Vercel
-
-1. Fork/clone this repo
-2. Deploy to Vercel (connect your GitHub repo or use `vercel --prod`)
-3. Set `INTERNET_GATEWAY_KEY` environment variable in Vercel dashboard (any random string — must match the one you give to `setup.sh`)
-
-## Bypass Vercel Security (Required)
-
-Vercel's edge firewall blocks automated tools like `curl` by default. To make the proxy work, you must create a bypass rule:
-
-### 1. Disable Vercel Firewall for your project
-
-1. Go to your Vercel project dashboard → **Firewall**
-2. Click **Add Rule**
-3. **Condition**: `Request Path` → `Starts with` → `/`
-4. **Action**: `Bypass`
-5. Click **Save Rule**
-6. Click **Review Changes** → **Publish**
-
-Ensure this rule sits at the **very top** of your rule list so it triggers before any other security restrictions.
-
-### 2. Check Deployment Protection
-
-1. Go to **Settings** → **Deployment Protection**
-2. If **Vercel Authentication** or **Password Protection** is enabled, disable it
-3. Or use a **Protection Bypass for Automation** token and pass it as a header
-
-### 3. Verify
-
-After publishing the bypass rule, test with:
+## Deploy to Railway
 
 ```bash
-curl -s -A "Mozilla/5.0" https://your-project.vercel.app/
+railway login
+railway up
 ```
 
-Should return `{"status":"ok","message":"Internet Gateway Proxy is active"}`
+Railway auto-detects the Node.js app and deploys it. Your proxy will be at `https://your-project.up.railway.app`.
 
----
+## Usage
+
+Set the Railway URL as your proxy on the VPS:
+
+```bash
+export HTTP_PROXY=https://your-project.up.railway.app
+export HTTPS_PROXY=https://your-project.up.railway.app
+```
+
+Or use the setup script: `bash <(curl -sSL https://raw.githubusercontent.com/o-x-api/internet-gateway-setup/main/Setup/setup.sh)`
 
 ## Endpoints
 
-| Path | Method | Description |
-|------|--------|-------------|
-| `/` | GET | Status check |
-| `/encrypt` | GET | Encrypt a URL with `x-forwarded-dest` header, returns `{encrypted}` |
-| `/raw` | POST | Accept raw target URL in `x-raw-dest` header (base64url), encrypts server-side and fetches |
-
-**Setup scripts:** [o-x-api/internet-gateway-setup](https://github.com/o-x-api/internet-gateway-setup)
+The proxy supports standard HTTP proxy protocol:
+- **HTTP GET/POST/PUT/etc**: Full URL in request line (`GET https://example.com/ HTTP/1.1`)
+- **CONNECT**: HTTPS tunneling
