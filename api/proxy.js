@@ -137,9 +137,21 @@ module.exports = async (req, res) => {
     for (const [k, v] of response.headers.entries()) {
       if (!IGNORED_RESP_HEADERS.has(k.toLowerCase())) responseHeaders[k] = v;
     }
-    const responseBuffer = Buffer.from(await response.arrayBuffer());
     res.writeHead(response.status, { ...corsHeaders, ...responseHeaders, "Vary": "x-raw-dest, x-forwarded-dest, origin" });
-    res.end(responseBuffer);
+    if (response.body) {
+      const reader = response.body.getReader();
+      (async () => {
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) { res.end(); break; }
+            res.write(value);
+          }
+        } catch (e) { if (!res.writableEnded) res.end(); }
+      })();
+    } else {
+      res.end();
+    }
   } catch (err) {
     res.writeHead(502, { "Content-Type": "application/json", ...corsHeaders });
     res.end(JSON.stringify({ error: err.message, target: targetUrl }));
