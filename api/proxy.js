@@ -138,7 +138,7 @@ module.exports = async (req, res) => {
       if (!IGNORED_RESP_HEADERS.has(k.toLowerCase())) responseHeaders[k] = v;
     }
     const responseBuffer = Buffer.from(await response.arrayBuffer());
-    res.writeHead(response.status, { ...corsHeaders, ...responseHeaders });
+    res.writeHead(response.status, { ...corsHeaders, ...responseHeaders, "Vary": "x-raw-dest, x-forwarded-dest, origin" });
     res.end(responseBuffer);
   } catch (err) {
     res.writeHead(502, { "Content-Type": "application/json", ...corsHeaders });
