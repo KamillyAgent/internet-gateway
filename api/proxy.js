@@ -70,6 +70,17 @@ module.exports = async (req, res) => {
     return;
   }
 
+  if (path === "/raw") {
+    const rawDest = req.headers["x-raw-dest"];
+    if (!rawDest) {
+      res.writeHead(400, { "Content-Type": "application/json", ...corsHeaders });
+      res.end(JSON.stringify({ error: "Missing x-raw-dest header" }));
+      return;
+    }
+    const encrypted = encryptUrl(rawDest.startsWith("http") ? rawDest : "https://" + rawDest, GATEWAY_KEY);
+    req.headers["x-forwarded-dest"] = encrypted;
+  }
+
   const encryptedDest = req.headers["x-forwarded-dest"];
 
   if ((path === "/" || path === "" || path === "/api/proxy" || path === "/proxy") && !encryptedDest) {
