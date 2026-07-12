@@ -25,6 +25,7 @@ proxy.on("request", (req, res) => {
 <span>Platform:</span> railway.app<br>
 </div>
 <div class="badge">Forward Proxy — CONNECT + HTTP</div>
+<div style="margin-top:16px;font-size:12px;color:#8b949e">Created by <a href="https://github.com/o-x-api" style="color:#58a6ff;text-decoration:none">@o-x-api</a></div>
 </div></body></html>`;
     res.writeHead(200, { "content-type": "text/html; charset=utf-8", "content-length": Buffer.byteLength(h) });
     res.end(h);
