@@ -44,9 +44,8 @@ proxy.on("request", (req, res) => {
     const chunks = [];
     req.on("data", c => chunks.push(c));
     req.on("end", () => {
-      const body = Buffer.concat(chunks);
       const opts = {
-        method: req.method,
+        method: "GET",
         hostname: u.hostname,
         port: parseInt(u.port) || (u.protocol === "http:" ? 80 : 443),
         path: u.pathname + u.search,
